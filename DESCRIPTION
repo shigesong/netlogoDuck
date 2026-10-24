@@ -1,0 +1,25 @@
+Package: netlogoDuck
+Title: Run NetLogo BehaviorSpace Experiments into DuckDB
+Version: 0.1.0
+Authors@R: person("Shige", "Song", email = "shigesong@gmail.com", role = c("aut", "cre"))
+Description: Runs NetLogo BehaviorSpace experiments via the 'logolink'
+    package and streams the results into a 'DuckDB' database for statistical
+    analysis. Provides helpers to define experiments, run them, ingest
+    existing BehaviorSpace CSV exports, and lazily read results back as
+    'duckplyr' frames.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends: R (>= 4.1.0)
+Imports:
+    DBI,
+    duckdb,
+    duckplyr,
+    dplyr,
+    logolink
+Suggests:
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0
+LazyData: true

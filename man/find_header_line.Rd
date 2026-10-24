@@ -15,4 +15,9 @@ The number of lines to skip before the header row (0-based).
 \description{
 Locate the BehaviorSpace header row
 }
+\examples{
+f <- tempfile(fileext = ".csv")
+writeLines(c('"metadata"', '"[run number]","ticks"', '"1","0"'), f)
+netlogoDuck:::find_header_line(f)
+}
 \keyword{internal}

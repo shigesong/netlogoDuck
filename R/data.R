@@ -4,7 +4,7 @@
 #' `src/monty_hall_spatial_rev13.nlogox` into three functional modules of the
 #' model's causal loop (population -> observe -> learn -> transmit -> adapt).
 #'
-#' @format A data frame with 21 rows and 5 columns:
+#' @format A data frame with 6 rows and 5 columns:
 #' \describe{
 #'   \item{parameter}{Name of the NetLogo parameter (matches the variable name).}
 #'   \item{group}{Short machine-readable group id.}
@@ -23,4 +23,7 @@
 #' @source Derived from the interface widgets in
 #'   `src/monty_hall_spatial_rev13.nlogox`.
 #' @seealso [run_experiment_to_duckdb()], [read_results()]
+#'
+#' @examples
+#' parameter_groups
 "parameter_groups"

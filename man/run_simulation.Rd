@@ -74,3 +74,15 @@ Invisibly, the number of rows appended.
 \description{
 Convenience wrapper that defines and runs an experiment in one step.
 }
+\examples{
+\dontrun{
+run_simulation(
+  name = "demo",
+  model = "model.nlogox",
+  db_path = "results.duckdb",
+  metrics = "ticks",
+  repetitions = 1,
+  time_limit = 5
+)
+}
+}

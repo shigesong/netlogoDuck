@@ -5,7 +5,7 @@
 \alias{parameter_groups}
 \title{Conceptual grouping of the monty_hall_spatial_rev13 model parameters}
 \format{
-A data frame with 21 rows and 5 columns:
+A data frame with 6 rows and 5 columns:
 \describe{
 \item{parameter}{Name of the NetLogo parameter (matches the variable name).}
 \item{group}{Short machine-readable group id.}
@@ -32,6 +32,9 @@ parameter_groups
 A data frame classifying the six interface parameters of
 \code{src/monty_hall_spatial_rev13.nlogox} into three functional modules of the
 model's causal loop (population -> observe -> learn -> transmit -> adapt).
+}
+\examples{
+parameter_groups
 }
 \seealso{
 \code{\link[=run_experiment_to_duckdb]{run_experiment_to_duckdb()}}, \code{\link[=read_results]{read_results()}}

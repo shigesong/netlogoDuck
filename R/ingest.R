@@ -72,6 +72,11 @@ csv_to_duckdb <- function(input,
 #' @param input Path to a BehaviorSpace results CSV.
 #' @return The number of lines to skip before the header row (0-based).
 #' @keywords internal
+#'
+#' @examples
+#' f <- tempfile(fileext = ".csv")
+#' writeLines(c('"metadata"', '"[run number]","ticks"', '"1","0"'), f)
+#' netlogoDuck:::find_header_line(f)
 find_header_line <- function(input) {
   con_text <- file(input, open = "r")
   on.exit(close(con_text))

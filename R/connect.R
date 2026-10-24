@@ -27,6 +27,10 @@ db_open <- function(db_path, read_only = FALSE) {
 #'
 #' @return Invisibly `NULL`.
 #' @export
+#'
+#' @examples
+#' con <- db_open(tempfile(fileext = ".duckdb"))
+#' db_close(con)
 db_close <- function(con) {
   if (!inherits(con, "duckdb_connection")) {
     stop("`con` must be a duckdb connection from db_open().", call. = FALSE)

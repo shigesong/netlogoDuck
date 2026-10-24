@@ -15,3 +15,7 @@ Invisibly \code{NULL}.
 \description{
 Close a DuckDB connection
 }
+\examples{
+con <- db_open(tempfile(fileext = ".duckdb"))
+db_close(con)
+}

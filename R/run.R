@@ -136,6 +136,18 @@ run_experiment_to_duckdb <- function(experiment,
 #'
 #' @return Invisibly, the number of rows appended.
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' run_simulation(
+#'   name = "demo",
+#'   model = "model.nlogox",
+#'   db_path = "results.duckdb",
+#'   metrics = "ticks",
+#'   repetitions = 1,
+#'   time_limit = 5
+#' )
+#' }
 run_simulation <- function(name,
                            model,
                            db_path,

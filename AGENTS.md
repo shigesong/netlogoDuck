@@ -18,7 +18,6 @@
 ## Source of truth and generated files
 
 - Edit roxygen comments and R source, not `NAMESPACE` or files under `man/`; those are generated from the package documentation. Regenerate them with roxygen2 when making API/documentation changes.
-- `data-raw/parameter_groups.R` regenerates both packaged datasets and must be run from this directory (`Rscript data-raw/parameter_groups.R`); it uses `usethis::use_data()` and can overwrite `data/*.rda`.
 - Keep database outputs, experiment outputs, and model files outside the package unless they are intentionally test fixtures; `.Rbuildignore` already excludes common local output and workspace directories.
 
 ## Data flow invariants

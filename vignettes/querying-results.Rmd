@@ -1,0 +1,154 @@
+---
+title: "Querying Results: netlogoDuck, dplyr, and duckplyr"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Querying Results: netlogoDuck, dplyr, and duckplyr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", message = FALSE)
+```
+
+```{r}
+library(netlogoDuck)
+```
+
+This vignette explains how the package splits work between three packages that
+all look like "data frame tools" from the outside: `netlogoDuck`, `dplyr`, and
+`duckplyr`. They sit in different layers, and knowing which layer owns what
+tells you where a computation actually runs.
+
+## Three packages, three jobs
+
+```
+netlogoDuck   orchestration (this package)
+   |-- write path: DBI + duckdb        <- dplyr is not involved
+   `-- read path:  duckplyr ---------> duckdb
+                      ^
+                    dplyr   (verb grammar, written by you)
+```
+
+| Layer | Job | Where it lives |
+| --- | --- | --- |
+| `netlogoDuck` | Define experiments, run them, ingest CSVs, expose readers | `R/experiment.R`, `R/run.R`, `R/ingest.R` |
+| `DBI` + `duckdb` | Connection handling and the storage engine | `db_open()`, the append path |
+| `duckplyr` | Turns a DuckDB table into a lazy data frame | `read_results()` |
+| `dplyr` | The verbs you write, plus `collect()` | Your analysis code |
+
+## The write side never touches dplyr
+
+`run_experiment_to_duckdb()`, its internal `append_to_duckdb()`, and
+`csv_to_duckdb()` write through `DBI::dbWriteTable()`, `DBI::dbAppendTable()`,
+and `DBI::dbExecute()`. Results travel from `logolink` (or from an existing
+BehaviorSpace CSV) straight into DuckDB; there is no dplyr transformation layer
+in between, so the write path has no opinion about how you will analyse the
+data later.
+
+## The read side hands you a duckplyr frame
+
+`read_results()` calls `duckplyr::read_tbl_duckdb()`, which attaches the
+database file to duckplyr's own connection (for the rest of the R session) and
+returns a `duckplyr_df` describing the requested table. Nothing is read yet.
+
+```{r}
+# A minimal BehaviorSpace-style export: two metadata lines, then the header.
+csv_path <- file.path(tempdir(), "behavior-space.csv")
+writeLines(
+  c(
+    '"BehaviorSpace results (NetLogo 7.0.4)"',
+    '"/home/user/models/demo.nlogox"',
+    '"[run number]","[step]","seed","density","final-wealth"',
+    '"1","0","1","0.2","95"',
+    '"2","0","2","0.5","140"',
+    '"3","0","3","0.8","61"',
+    '"4","0","4","0.5","132"'
+  ),
+  csv_path
+)
+
+db_path <- file.path(tempdir(), "demo.duckdb")
+csv_to_duckdb(csv_path, db_path, table = "results", quiet = TRUE)
+
+df <- read_results(db_path)
+class(df)
+df
+```
+
+The object carries the usual `tbl_df`/`data.frame` classes, so it behaves like
+a tibble, but its rows still live in DuckDB.
+
+## dplyr verbs become SQL
+
+`dplyr` supplies the intent — readable verbs — and `duckplyr` decides *where*
+that intent runs. Verbs are translated into SQL and executed by DuckDB; only a
+request for a result brings rows back into R.
+
+```{r}
+df |>
+  dplyr::filter(density > 0.3) |>
+  dplyr::summarise(n = dplyr::n(), mean_wealth = mean(`final-wealth`))
+```
+
+Note that the aggregated result is still a `duckplyr_df`: the query has been
+described, not run. Call `dplyr::collect()` when you want the values.
+
+This is the reason the read path uses duckplyr at all. A full BehaviorSpace
+sweep can be far larger than memory, and pushing `filter()`, `summarise()`,
+`count()`, and joins into DuckDB lets you reduce it before anything is
+materialized in R.
+
+## Getting a local tibble instead
+
+When a result is small, or you need a verb that only works on local data, ask
+`read_results()` to collect it:
+
+```{r}
+local <- read_results(db_path, collect = TRUE)
+class(local)
+```
+
+`collect = TRUE` is exactly `dplyr::collect()` applied to the lazy frame, which
+is the one place this package calls dplyr itself.
+
+## When duckplyr cannot translate a verb
+
+duckplyr is designed to fall back to ordinary dplyr evaluation when it meets an
+operation it cannot push down, and it messages you when that happens. Your
+results stay correct, but the work moves into R's memory. For large result
+tables, prefer verbs that translate; use `collect = TRUE` deliberately rather
+than by accident.
+
+One practical wrinkle inherited from BehaviorSpace: metric names often contain
+hyphens (`final-wealth`), which are not valid R symbols. Quote them with
+backticks inside dplyr verbs, as above.
+
+## When you want raw SQL
+
+For anything the tidyverse grammar does not express, open the same file with
+`db_open()` and query it directly:
+
+```{r}
+con <- db_open(db_path, read_only = TRUE)
+DBI::dbGetQuery(
+  con,
+  'SELECT "density", COUNT(*) AS n FROM "results" GROUP BY 1 ORDER BY 1'
+)
+db_close(con)
+```
+
+`read_results()` is a convenience over this, not a replacement for it.
+
+## Why both packages are hard dependencies
+
+`dplyr` and `duckplyr` are both listed in `Imports` because they are not
+alternatives:
+
+- `dplyr` provides the verb grammar and `collect()`.
+- `duckplyr` provides the lazy DuckDB-backed frame and the translation to SQL.
+- `duckdb` and `DBI` do the storage and execution underneath.
+
+The layers are independent of experiment execution, which is why `logolink` is
+a separate concern entirely: it never sees your analysis code, and your
+analysis code never sees NetLogo.

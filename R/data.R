@@ -24,14 +24,3 @@
 #'   `src/monty_hall_spatial_rev13.nlogox`.
 #' @seealso [run_experiment_to_duckdb()], [read_results()]
 "parameter_groups"
-
-#' Conceptual grouping of the monty_hall_spatial_rev12 model parameters
-#'
-#' The historical 21-parameter classification for rev12. Use
-#' [parameter_groups] for the streamlined rev13 model.
-#'
-#' @format A data frame with 21 rows and the same columns as [parameter_groups].
-#' @source Derived from the interface widgets in
-#'   `src/monty_hall_spatial_rev12.nlogox`.
-#' @seealso [parameter_groups]
-"parameter_groups_rev12"

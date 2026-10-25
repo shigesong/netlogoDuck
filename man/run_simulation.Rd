@@ -21,6 +21,7 @@ run_simulation(
   timeout = Inf,
   metadata = NULL,
   smoke = FALSE,
+  quiet_fail = FALSE,
   ...
 )
 }
@@ -65,6 +66,10 @@ than only at the end.}
 
 \item{smoke}{Logical; if \code{TRUE}, forces 1 repetition and 5 ticks for a
 quick validation run without editing the experiment object.}
+
+\item{quiet_fail}{Logical; if \code{TRUE}, convert a failed NetLogo run into a
+warning and return zero rows. Defaults to \code{FALSE}, so execution failures
+are errors and cannot be mistaken for successful empty results.}
 
 \item{...}{Further arguments passed to \code{\link[logolink:create_experiment]{logolink::create_experiment()}}.}
 }

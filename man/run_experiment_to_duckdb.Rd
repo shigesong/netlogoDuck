@@ -14,7 +14,8 @@ run_experiment_to_duckdb(
   smoke = FALSE,
   output = "table",
   tidy_output = TRUE,
-  db_con = NULL
+  db_con = NULL,
+  quiet_fail = FALSE
 )
 }
 \arguments{
@@ -43,6 +44,10 @@ quick validation run without editing the experiment object.}
 
 \item{db_con}{Optional: an existing connection from \code{\link[=db_open]{db_open()}}. If given,
 \code{db_path} is ignored and the connection is left open on exit.}
+
+\item{quiet_fail}{Logical; if \code{TRUE}, convert a failed NetLogo run into a
+warning and return zero rows. Defaults to \code{FALSE}, so execution failures
+are errors and cannot be mistaken for successful empty results.}
 }
 \value{
 Invisibly, the number of rows appended to the database.

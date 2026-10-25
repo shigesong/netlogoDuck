@@ -55,6 +55,15 @@ test_that("db_open / db_close round-trip a file", {
   expect_true(file.exists(out))
 })
 
+test_that("public connection and query arguments are validated", {
+  expect_error(netlogoDuck::db_open(character()), "db_path")
+  expect_error(netlogoDuck::db_open(tempfile(), read_only = NA), "read_only")
+  out <- tempfile(fileext = ".duckdb")
+  con <- netlogoDuck::db_open(out)
+  netlogoDuck::db_close(con)
+  expect_error(netlogoDuck::read_results(out, collect = NA), "collect")
+})
+
 test_that("read_results returns a lazy duckplyr frame", {
   f <- tempfile(fileext = ".csv")
   writeLines(c(

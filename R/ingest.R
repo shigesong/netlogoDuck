@@ -25,13 +25,18 @@ csv_to_duckdb <- function(input,
                           table = "results",
                           quiet = FALSE,
                           db_con = NULL) {
-  if (!is.character(input) || length(input) != 1L) {
-    stop("`input` must be a single path string.", call. = FALSE)
-  }
+  validate_path(input, "input")
   if (!file.exists(input)) stop("input not found: ", input, call. = FALSE)
+  if (!is.null(output)) validate_path(output, "output", allow_memory = TRUE)
+  validate_table(table)
+  if (!is_scalar_logical(quiet)) {
+    stop("`quiet` must be one non-missing logical value.", call. = FALSE)
+  }
+  if (!is.null(db_con)) validate_db_con(db_con)
   if (is.null(output) && is.null(db_con)) {
     output <- sub("\\.csv$", ".duckdb", input)
   }
+  if (is.null(db_con)) validate_path(output, "output", allow_memory = TRUE)
 
   log <- function(...) if (!quiet) message(...)
 

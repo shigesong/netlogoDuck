@@ -48,18 +48,26 @@ define_experiment <- function(name,
                               setup = "setup",
                               go = "go",
                               ...) {
-  if (!is.character(name) || length(name) != 1L || !nzchar(name)) {
-    stop("`name` must be a single non-empty string.", call. = FALSE)
-  }
-  if (!is.character(model) || length(model) != 1L) {
-    stop("`model` must be a single path string.", call. = FALSE)
-  }
+  validate_string(name, "name")
+  validate_path(model, "model")
   if (!file.exists(model)) {
     stop("model file not found: ", model, call. = FALSE)
   }
-  if (!is.list(constants)) {
-    stop("`constants` must be a list.", call. = FALSE)
+  validate_metrics(metrics)
+  validate_named_list(constants, "constants")
+  validate_sub_experiments(sub_experiments)
+  if (!is_positive_integerish(repetitions)) {
+    stop("`repetitions` must be one positive integer.", call. = FALSE)
   }
+  if (!is_nonnegative_integerish(time_limit)) {
+    stop("`time_limit` must be one non-negative integer.", call. = FALSE)
+  }
+  if (!is_scalar_logical(run_metrics_every_step)) {
+    stop("`run_metrics_every_step` must be one non-missing logical value.",
+         call. = FALSE)
+  }
+  validate_string(setup, "setup")
+  validate_string(go, "go")
 
   setup_file <- tempfile(pattern = paste0("experiment-", gsub("[^A-Za-z0-9]", "_", name), "-"),
                          fileext = ".xml")

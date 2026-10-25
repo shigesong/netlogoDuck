@@ -1,6 +1,6 @@
 Package: netlogoDuck
 Title: Run NetLogo BehaviorSpace Experiments into DuckDB
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: person("Shige", "Song", email = "shigesong@gmail.com", role = c("aut", "cre"))
 Description: Runs NetLogo BehaviorSpace experiments via the 'logolink'
     package and streams the results into a 'DuckDB' database for statistical

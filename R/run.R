@@ -21,6 +21,9 @@
 #' @param tidy_output Passed to [logolink::run_experiment()].
 #' @param db_con Optional: an existing connection from [db_open()]. If given,
 #'   `db_path` is ignored and the connection is left open on exit.
+#' @param quiet_fail Logical; if `TRUE`, convert a failed NetLogo run into a
+#'   warning and return zero rows. Defaults to `FALSE`, so execution failures
+#'   are errors and cannot be mistaken for successful empty results.
 #'
 #' @return Invisibly, the number of rows appended to the database.
 #' @export
@@ -42,11 +45,37 @@ run_experiment_to_duckdb <- function(experiment,
                                      smoke = FALSE,
                                      output = "table",
                                      tidy_output = TRUE,
-                                     db_con = NULL) {
-  stopifnot(inherits(experiment, "netlogo_experiment"))
-  if (!is.character(table) || length(table) != 1L) {
-    stop("`table` must be a single string.", call. = FALSE)
+                                     db_con = NULL,
+                                     quiet_fail = FALSE) {
+  if (!inherits(experiment, "netlogo_experiment")) {
+    stop("`experiment` must be a netlogo_experiment from define_experiment().",
+         call. = FALSE)
   }
+  if (is.null(db_con)) validate_path(db_path, "db_path", allow_memory = TRUE)
+  validate_table(table)
+  if (!is_positive_integerish(threads)) {
+    stop("`threads` must be one positive integer.", call. = FALSE)
+  }
+  if (!((is.numeric(timeout) && length(timeout) == 1L && !is.na(timeout) &&
+         (is.infinite(timeout) && timeout > 0 || is.finite(timeout) && timeout >= 0)))) {
+    stop("`timeout` must be one non-negative number or Inf.", call. = FALSE)
+  }
+  validate_metadata(metadata)
+  if (!is_scalar_logical(smoke)) {
+    stop("`smoke` must be one non-missing logical value.", call. = FALSE)
+  }
+  if (!is.character(output) || length(output) == 0L || anyNA(output) ||
+      any(!nzchar(output))) {
+    stop("`output` must be a non-empty character vector of output types.",
+         call. = FALSE)
+  }
+  if (!is_scalar_logical(tidy_output)) {
+    stop("`tidy_output` must be one non-missing logical value.", call. = FALSE)
+  }
+  if (!is_scalar_logical(quiet_fail)) {
+    stop("`quiet_fail` must be one non-missing logical value.", call. = FALSE)
+  }
+  if (!is.null(db_con)) validate_db_con(db_con)
 
   # Smoke mode: 1 rep x 5 ticks, without mutating the caller's object.
   if (smoke) {
@@ -60,12 +89,6 @@ run_experiment_to_duckdb <- function(experiment,
       time_limit          = 5L,
       run_metrics_every_step = FALSE
     )
-  }
-
-  if (!is.null(metadata)) {
-    if (!is.list(metadata) || is.null(names(metadata))) {
-      stop("`metadata` must be a named list.", call. = FALSE)
-    }
   }
 
   other_args <- c(paste("--threads", threads))
@@ -82,8 +105,13 @@ run_experiment_to_duckdb <- function(experiment,
       tidy_output     = tidy_output
     ),
     error = function(e) {
-      warning("run_experiment() failed: ", conditionMessage(e), call. = FALSE)
-      NULL
+      message <- paste0("[", experiment$name, "] NetLogo experiment failed: ",
+                        conditionMessage(e))
+      if (quiet_fail) {
+        warning(message, call. = FALSE)
+        return(NULL)
+      }
+      stop(message, call. = FALSE)
     }
   )
 
@@ -95,7 +123,7 @@ run_experiment_to_duckdb <- function(experiment,
   tab <- as.data.frame(res$table)
 
   # Stamp run metadata as flat columns.
-  run_id  <- paste0(experiment$name, "-", format(Sys.time(), "%Y%m%d-%H%M%S"))
+  run_id  <- new_run_id(experiment$name)
   meta <- list(
     run_id      = run_id,
     experiment  = experiment$name,
@@ -161,10 +189,11 @@ run_simulation <- function(name,
                            go = "go",
                            table = "results",
                            threads = 4L,
-                           timeout = Inf,
-                           metadata = NULL,
-                           smoke = FALSE,
-                           ...) {
+                            timeout = Inf,
+                            metadata = NULL,
+                            smoke = FALSE,
+                            quiet_fail = FALSE,
+                            ...) {
   xp <- define_experiment(
     name = name,
     model = model,
@@ -185,11 +214,31 @@ run_simulation <- function(name,
     threads = threads,
     timeout = timeout,
     metadata = metadata,
-    smoke = smoke
+    smoke = smoke,
+    quiet_fail = quiet_fail
   )
 }
 
 # --- internal helpers -------------------------------------------------------
+
+.run_state <- new.env(parent = emptyenv())
+.run_state$counter <- 0L
+
+# Generate an identifier that remains unique when runs start in the same
+# second, including when multiple R processes write to the same database.
+new_run_id <- function(experiment_name) {
+  .run_state$counter <- .run_state$counter + 1L
+  timestamp <- format(Sys.time(), "%Y%m%dT%H%M%OS6", tz = "UTC")
+  token <- basename(tempfile(pattern = "netlogoDuck-run-"))
+  paste(
+    experiment_name,
+    timestamp,
+    Sys.getpid(),
+    sprintf("%08d", .run_state$counter),
+    token,
+    sep = "-"
+  )
+}
 
 bind_metadata <- function(tab, meta) {
   for (nm in names(meta)) {

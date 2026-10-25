@@ -23,14 +23,14 @@ read_results <- function(db_path,
                          table = "results",
                          schema = "main",
                          collect = FALSE) {
-  if (!is.character(db_path) || length(db_path) != 1L) {
-    stop("`db_path` must be a single path string.", call. = FALSE)
-  }
+  validate_path(db_path, "db_path")
   if (!file.exists(db_path)) {
     stop("database file not found: ", db_path, call. = FALSE)
   }
-  if (!is.character(table) || length(table) != 1L) {
-    stop("`table` must be a single string.", call. = FALSE)
+  validate_table(table)
+  validate_string(schema, "schema")
+  if (!is_scalar_logical(collect)) {
+    stop("`collect` must be one non-missing logical value.", call. = FALSE)
   }
 
   out <- duckplyr::read_tbl_duckdb(

@@ -14,8 +14,9 @@
 #' con <- db_open(tempfile(fileext = ".duckdb"))
 #' db_close(con)
 db_open <- function(db_path, read_only = FALSE) {
-  if (!is.character(db_path) || length(db_path) != 1L) {
-    stop("`db_path` must be a single path string.", call. = FALSE)
+  validate_path(db_path, "db_path", allow_memory = TRUE)
+  if (!is_scalar_logical(read_only)) {
+    stop("`read_only` must be one non-missing logical value.", call. = FALSE)
   }
   drv <- duckdb::duckdb()
   DBI::dbConnect(drv, dbdir = db_path, read_only = read_only)
@@ -32,9 +33,7 @@ db_open <- function(db_path, read_only = FALSE) {
 #' con <- db_open(tempfile(fileext = ".duckdb"))
 #' db_close(con)
 db_close <- function(con) {
-  if (!inherits(con, "duckdb_connection")) {
-    stop("`con` must be a duckdb connection from db_open().", call. = FALSE)
-  }
+  validate_db_con(con)
   DBI::dbDisconnect(con, shutdown = TRUE)
   invisible(NULL)
 }

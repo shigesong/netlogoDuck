@@ -62,6 +62,26 @@ validate_sub_experiments <- function(sub_experiments) {
   invisible(sub_experiments)
 }
 
+validate_ranges <- function(ranges, arg = "ranges") {
+  validate_named_list(ranges, arg)
+  if (length(ranges) == 0L) {
+    stop("`", arg, "` must contain at least one factor.", call. = FALSE)
+  }
+  valid <- vapply(
+    ranges,
+    function(range) {
+      is.numeric(range) && length(range) == 2L &&
+        all(is.finite(range)) && range[1] < range[2]
+    },
+    logical(1)
+  )
+  if (!all(valid)) {
+    stop("each element of `", arg, "` must be a numeric c(low, high) with low < high.",
+         call. = FALSE)
+  }
+  invisible(ranges)
+}
+
 validate_metadata <- function(metadata) {
   validate_named_list(metadata, "metadata", allow_null = TRUE)
   if (!is.null(metadata)) {

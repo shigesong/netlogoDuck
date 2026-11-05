@@ -102,6 +102,30 @@ run_simulation(
 experiment object supplied by the caller. It is intended for a quick runtime
 check, not for production results.
 
+### Design a Latin hypercube
+
+`lhs_design()` draws a maximin Latin hypercube on the model's own ranges and
+returns one row per design point, ready to become `sub_experiments`:
+
+```r
+design <- lhs_design(
+  n = 20,
+  ranges = list(
+    "wolf-reproduce"      = c(1, 20),
+    "grass-regrowth-time" = c(5, 100)
+  ),
+  fixed = list("model-version" = "sheep-wolves-grass"),
+  seed = 2026
+)
+
+design
+```
+
+Each row is one sub-experiment, so the design is row-wise rather than a grid:
+`define_experiment()` runs exactly those points, and `as.list()` on one row
+gives the named list it expects. Values are rounded to the model's integer grid
+and settings in `fixed` are appended to every row.
+
 ### Import an existing BehaviorSpace CSV
 
 NetLogo BehaviorSpace CSV exports contain metadata before their actual header.
@@ -248,6 +272,7 @@ files and do not launch NetLogo.
 - Vignette: `vignette("querying-results", package = "netlogoDuck")`
 - Package reference: `?netlogoDuck`
 - Experiment definition: `?define_experiment`
+- Design generation: `?lhs_design`
 - Experiment execution: `?run_experiment_to_duckdb`
 - CSV ingestion: `?csv_to_duckdb`
 - Lazy querying: `?read_results`

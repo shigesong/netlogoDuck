@@ -149,3 +149,55 @@ test_that("lhs_design validates its inputs", {
   expect_error(netlogoDuck::lhs_design(5, ranges, seed = c(1, 2)), "`seed`")
   expect_error(netlogoDuck::lhs_design(5, ranges, dup = 0), "`dup`")
 })
+
+test_that("as_sub_experiments returns one named list per design row", {
+  design <- tibble::tibble(
+    "density"          = c(55, 95),
+    "%-similar-wanted" = c(20, 60)
+  )
+
+  subs <- netlogoDuck::as_sub_experiments(design)
+
+  expect_type(subs, "list")
+  expect_length(subs, 2L)
+  expect_true(all(vapply(subs, is.list, logical(1))))
+  expect_equal(names(subs[[1]]), c("density", "%-similar-wanted"))
+  expect_equal(subs[[1]], list("density" = 55, "%-similar-wanted" = 20))
+  expect_equal(subs[[2]], list("density" = 95, "%-similar-wanted" = 60))
+})
+
+test_that("as_sub_experiments keeps values of every type and drops names", {
+  design <- data.frame(
+    "density"   = c(55, 95),
+    "scenario"  = factor(c("baseline", "policy-a")),
+    "show? "    = c(TRUE, FALSE),
+    check.names = FALSE
+  )
+
+  subs <- netlogoDuck::as_sub_experiments(design)
+
+  expect_type(subs[[1]][["scenario"]], "character")
+  expect_equal(subs[[1]][["scenario"]], "baseline")
+  expect_equal(subs[[2]][["scenario"]], "policy-a")
+  expect_identical(subs[[1]][["show? "]], TRUE)
+  expect_null(names(subs[[1]][["density"]]))
+})
+
+test_that("as_sub_experiments rejects designs that cannot become bundles", {
+  expect_error(netlogoDuck::as_sub_experiments(matrix(1:4, 2)), "data frame")
+
+  empty <- data.frame(density = numeric(0))
+  expect_error(netlogoDuck::as_sub_experiments(empty), "at least one row")
+
+  no_columns <- data.frame(row.names = 1:2)
+  expect_error(netlogoDuck::as_sub_experiments(no_columns), "at least one column")
+
+  missing <- data.frame(density = c(55, NA))
+  expect_error(netlogoDuck::as_sub_experiments(missing), "missing values.*density")
+
+  listed <- tibble::tibble(density = c(55, 95), scenario = list("a", "b"))
+  expect_error(netlogoDuck::as_sub_experiments(listed), "list columns.*scenario")
+
+  repeated <- data.frame(a = 1, a = 2, check.names = FALSE)
+  expect_error(netlogoDuck::as_sub_experiments(repeated), "unique column names.*a")
+})

@@ -13,6 +13,10 @@
 #' Use [csv_to_duckdb()] to import results that were exported directly from
 #' NetLogo instead of run through this package.
 #'
+#' Designs come from [lhs_design()] for Latin hypercubes, or from any data frame
+#' with one row per design point; [as_sub_experiments()] converts either into
+#' the `sub_experiments` argument of [define_experiment()].
+#'
 #' @keywords internal
 #' @aliases netlogoDuck
 "_PACKAGE"

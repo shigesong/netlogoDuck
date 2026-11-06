@@ -3,7 +3,7 @@
 ## What this is
 
 - This directory is a standalone R package that runs NetLogo BehaviorSpace experiments through `logolink`, stores results in DuckDB, and reads them with `duckplyr`; it is not a runnable NetLogo model repository.
-- Public API code is in `R/`: connection helpers in `connect.R`, design generation in `design.R`, experiment definition in `experiment.R`, CSV ingestion in `ingest.R`, lazy queries in `query.R`, and experiment execution/append logic in `run.R`.
+- Public API code is in `R/`: connection helpers in `connect.R`, design generation and design-to-bundle conversion in `design.R`, experiment definition in `experiment.R`, CSV ingestion in `ingest.R`, lazy queries in `query.R`, and experiment execution/append logic in `run.R`.
 - NetLogo model files are external inputs. `define_experiment()` validates the model path, and `run_experiment_to_duckdb()` delegates execution to `logolink`; do not assume a model or NetLogo runtime is present here.
 
 ## Development and verification

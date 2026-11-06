@@ -114,6 +114,55 @@ lhs_design <- function(n,
   design
 }
 
+#' Convert a design data frame to sub-experiments
+#'
+#' Turns a data frame with one row per design point into the list of named lists
+#' that [define_experiment()] expects as `sub_experiments`. Column names are
+#' kept exactly, including non-syntactic names such as `%-similar-wanted`, and
+#' factor columns are converted to character because NetLogo receives strings.
+#'
+#' Each returned element is one complete sub-experiment. Because the conversion
+#' is by row, the design stays row-wise: rows are never crossed with each other.
+#'
+#' @param design A data frame or tibble with one row per design point and one
+#'   column per NetLogo global. Column names must be unique and non-empty, and
+#'   no value may be missing.
+#'
+#' @return A list with one element per row of `design`; each element is a named
+#'   list of single values.
+#' @export
+#'
+#' @seealso [lhs_design()] to build a design, [define_experiment()] to turn it
+#'   into an experiment.
+#'
+#' @examples
+#' design <- data.frame(
+#'   "density"          = c(55, 95),
+#'   "%-similar-wanted" = c(20, 60),
+#'   check.names        = FALSE
+#' )
+#' as_sub_experiments(design)
+as_sub_experiments <- function(design) {
+  if (!is.data.frame(design)) {
+    stop("`design` must be a data frame with one row per design point.",
+         call. = FALSE)
+  }
+  if (nrow(design) == 0L) {
+    stop("`design` must have at least one row.", call. = FALSE)
+  }
+  validate_design_columns(design)
+
+  # Factors are converted once, up front, so the row loop stays simple.
+  columns <- lapply(
+    design,
+    function(column) if (is.factor(column)) as.character(column) else column
+  )
+  lapply(
+    seq_len(nrow(design)),
+    function(i) lapply(columns, function(column) unname(column[[i]]))
+  )
+}
+
 # Give every block of `length(values)` consecutive rows all the levels, in
 # random order. A final short block takes a random subset of the levels.
 allocate_levels <- function(values, n) {

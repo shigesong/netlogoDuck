@@ -107,6 +107,32 @@ validate_levels <- function(levels, arg = "levels") {
   invisible(levels)
 }
 
+validate_design_columns <- function(design) {
+  columns <- names(design)
+  if (length(columns) == 0L) {
+    stop("`design` must have at least one column.", call. = FALSE)
+  }
+  if (is.null(columns) || anyNA(columns) || any(!nzchar(columns))) {
+    stop("`design` must have a name for every column.", call. = FALSE)
+  }
+  if (anyDuplicated(columns)) {
+    repeated <- unique(columns[duplicated(columns)])
+    stop("`design` must have unique column names; repeated: ",
+         paste(repeated, collapse = ", "), call. = FALSE)
+  }
+  list_columns <- columns[vapply(design, is.list, logical(1))]
+  if (length(list_columns) > 0L) {
+    stop("`design` must not contain list columns: ",
+         paste(list_columns, collapse = ", "), call. = FALSE)
+  }
+  missing <- columns[vapply(design, anyNA, logical(1))]
+  if (length(missing) > 0L) {
+    stop("`design` must not contain missing values; affected columns: ",
+         paste(missing, collapse = ", "), call. = FALSE)
+  }
+  invisible(design)
+}
+
 validate_metadata <- function(metadata) {
   validate_named_list(metadata, "metadata", allow_null = TRUE)
   if (!is.null(metadata)) {

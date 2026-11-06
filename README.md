@@ -123,12 +123,28 @@ design
 ```
 
 Each row is one sub-experiment, so the design is row-wise rather than a grid:
-`define_experiment()` runs exactly those points, and `as.list()` on one row
-gives the named list it expects. Numeric values are rounded to the model's
-integer grid, settings in `fixed` are appended to every row, and each level in
-`levels` is allocated once per block of rows — make `n` a multiple of the level
-count for exact balance. A level that must be crossed with the whole design
-belongs in `constants` instead, where it multiplies the run count.
+`define_experiment()` runs exactly those points. Numeric values are rounded to
+the model's integer grid, settings in `fixed` are appended to every row, and
+each level in `levels` is allocated once per block of rows — make `n` a
+multiple of the level count for exact balance. A level that must be crossed
+with the whole design belongs in `constants` instead, where it multiplies the
+run count.
+
+`as_sub_experiments()` performs the conversion, keeping column names exact
+(including non-syntactic ones such as `%-similar-wanted`) and turning factors
+into character:
+
+```r
+define_experiment(
+  name = "wsp_latin_hypercube",
+  model = model_path,
+  metrics = c("count sheep", "count wolves"),
+  sub_experiments = as_sub_experiments(design)
+)
+```
+
+It accepts any data frame with one row per design point, so designs produced by
+`FrF2`, `randtoolbox`, or a hand-written tibble go through the same call.
 
 ### Import an existing BehaviorSpace CSV
 
@@ -277,6 +293,7 @@ files and do not launch NetLogo.
 - Package reference: `?netlogoDuck`
 - Experiment definition: `?define_experiment`
 - Design generation: `?lhs_design`
+- Design conversion: `?as_sub_experiments`
 - Experiment execution: `?run_experiment_to_duckdb`
 - CSV ingestion: `?csv_to_duckdb`
 - Lazy querying: `?read_results`

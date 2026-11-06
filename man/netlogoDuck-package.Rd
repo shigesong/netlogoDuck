@@ -21,6 +21,10 @@ existing BehaviorSpace CSV exports, and query results lazily with
 
 Use \code{\link[=csv_to_duckdb]{csv_to_duckdb()}} to import results that were exported directly from
 NetLogo instead of run through this package.
+
+Designs come from \code{\link[=lhs_design]{lhs_design()}} for Latin hypercubes, or from any data frame
+with one row per design point; \code{\link[=as_sub_experiments]{as_sub_experiments()}} converts either into
+the \code{sub_experiments} argument of \code{\link[=define_experiment]{define_experiment()}}.
 }
 
 \seealso{

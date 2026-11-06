@@ -4,7 +4,7 @@
 \alias{lhs_design}
 \title{Build a Latin hypercube design on the model's own ranges}
 \usage{
-lhs_design(n, ranges, fixed = list(), seed = NULL, dup = 5L)
+lhs_design(n, ranges, fixed = list(), levels = list(), seed = NULL, dup = 5L)
 }
 \arguments{
 \item{n}{Number of design points.}
@@ -16,6 +16,15 @@ lhs_design(n, ranges, fixed = list(), seed = NULL, dup = 5L)
 (e.g. \code{list("model-version" = "sheep-wolves-grass")}). Appended as
 columns to the returned design.}
 
+\item{levels}{Named list of categorical factors, each a vector of two or more
+distinct levels (e.g. \code{list(scenario = c("baseline", "policy-a"))}). Each
+level is allocated once per block of rows, so counts differ by at most one.
+Make \code{n} a multiple of the number of levels for exact balance. Levels are
+allocated independently of the numeric strata: every level sees a
+representative share of the numeric space, not all of it. To cross a level
+with the whole numeric design instead, leave it out of \code{levels} and pass it
+in \code{constants} to \code{\link[=define_experiment]{define_experiment()}}, which multiplies the run count.}
+
 \item{seed}{Optional single number; when supplied, the draw is reproducible.}
 
 \item{dup}{Number of candidate points \code{maximinLHS()} weighs per design
@@ -24,31 +33,41 @@ running time.}
 }
 \value{
 A \link[tibble:tibble-package]{tibble} with \code{n} rows: one column per
-element of \code{ranges} (rounded to integers) followed by one column per
-element of \code{fixed}.
+element of \code{ranges} (rounded to integers), then one column per element of
+\code{levels}, then one column per element of \code{fixed}.
 }
 \description{
 Draws a maximin Latin hypercube with \code{\link[lhs:maximinLHS]{lhs::maximinLHS()}}, maps each column
 onto the range of the factor it belongs to, rounds to the model's integer
-grid, and appends settings that do not vary. The result is one row per design
-point, so it is a row-wise design and not a grid: no two rows are crossed.
+grid, allocates categorical factors in balanced blocks, and appends settings
+that do not vary. The result is one row per design point, so it is a row-wise
+design and not a grid: no two rows are crossed.
 }
 \details{
+Three kinds of variable are handled differently. Numeric factors are sampled
+through \code{ranges}. Categorical factors with several levels are allocated
+through \code{levels} so that every level appears equally often. Settings that
+never vary, including single-level factors, go in \code{fixed}.
+
 Pass the rows to \code{\link[=define_experiment]{define_experiment()}} as \code{sub_experiments}; a data frame row
 becomes a sub-experiment with \code{as.list()}, and the column names must match
 NetLogo global names exactly.
 }
 \examples{
 design <- lhs_design(
-  n = 10,
+  n = 12,
   ranges = list(
     "wolf-reproduce"      = c(1, 20),
     "grass-regrowth-time" = c(5, 100)
   ),
+  levels = list(scenario = c("baseline", "policy-a", "policy-b")),
   fixed = list("model-version" = "sheep-wolves-grass"),
   seed = 2026
 )
 design
+
+# Three levels over twelve rows: four points each.
+table(design[["scenario"]])
 }
 \seealso{
 \code{\link[=define_experiment]{define_experiment()}} to turn the rows into an experiment.

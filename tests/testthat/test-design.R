@@ -57,6 +57,85 @@ test_that("lhs_design rows convert to sub-experiment lists", {
   expect_length(rows[[1]][["density"]], 1L)
 })
 
+test_that("lhs_design allocates categorical levels in balanced blocks", {
+  design <- netlogoDuck::lhs_design(
+    n = 12,
+    ranges = list(density = c(40, 80)),
+    levels = list(scenario = c("baseline", "policy-a", "policy-b")),
+    fixed = list("model-version" = "fire"),
+    seed = 2026
+  )
+
+  expect_equal(names(design), c("density", "scenario", "model-version"))
+  expect_equal(nrow(design), 12)
+  expect_type(design[["scenario"]], "character")
+  expect_equal(as.integer(table(design[["scenario"]])), rep(4L, 3))
+
+  # Levels are allocated in blocks: each block of three rows has all three.
+  blocks <- split(design[["scenario"]], rep(seq_len(4), each = 3))
+  expect_true(all(vapply(blocks, function(x) length(unique(x)) == 3L, logical(1))))
+})
+
+test_that("lhs_design warns when n is not a multiple of the level count", {
+  expect_warning(
+    design <- netlogoDuck::lhs_design(
+      n = 10,
+      ranges = list(density = c(40, 80)),
+      levels = list(scenario = c("a", "b", "c")),
+      seed = 1
+    ),
+    "not a multiple"
+  )
+  counts <- as.integer(table(design[["scenario"]]))
+  expect_equal(sum(counts), 10)
+  expect_lte(max(counts) - min(counts), 1L)
+})
+
+test_that("lhs_design reproduces level allocation under one seed", {
+  arguments <- list(
+    n = 9,
+    ranges = list(density = c(40, 80)),
+    levels = list(scenario = c("a", "b", "c")),
+    seed = 42
+  )
+  expect_identical(
+    do.call(netlogoDuck::lhs_design, arguments),
+    do.call(netlogoDuck::lhs_design, arguments)
+  )
+})
+
+test_that("lhs_design accepts factor levels", {
+  design <- netlogoDuck::lhs_design(
+    n = 6,
+    ranges = list(density = c(40, 80)),
+    levels = list(scenario = factor(c("low", "mid", "high"))),
+    seed = 3
+  )
+  expect_type(design[["scenario"]], "character")
+  expect_setequal(unique(design[["scenario"]]), c("low", "mid", "high"))
+})
+
+test_that("lhs_design validates categorical levels", {
+  ranges <- list(density = c(40, 80))
+
+  expect_error(netlogoDuck::lhs_design(6, ranges, levels = list(c("a", "b"))),
+               "`levels`")
+  expect_error(netlogoDuck::lhs_design(6, ranges, levels = list(scenario = c("a", "a"))),
+               "each level once")
+  expect_error(netlogoDuck::lhs_design(6, ranges, levels = list(scenario = "a")),
+               "at least two levels")
+  expect_error(netlogoDuck::lhs_design(6, ranges, levels = list(scenario = c("a", NA))),
+               "missing or empty")
+  expect_error(netlogoDuck::lhs_design(6, ranges, levels = list(density = c("a", "b"))),
+               "must not repeat a name")
+  expect_error(
+    netlogoDuck::lhs_design(6, ranges,
+                            fixed = list(model = "x"),
+                            levels = list(model = c("a", "b"))),
+    "must not repeat a name"
+  )
+})
+
 test_that("lhs_design validates its inputs", {
   ranges <- list(density = c(40, 80))
 

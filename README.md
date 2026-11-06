@@ -114,6 +114,7 @@ design <- lhs_design(
     "wolf-reproduce"      = c(1, 20),
     "grass-regrowth-time" = c(5, 100)
   ),
+  levels = list(scenario = c("baseline", "policy-a", "policy-b")),
   fixed = list("model-version" = "sheep-wolves-grass"),
   seed = 2026
 )
@@ -123,8 +124,11 @@ design
 
 Each row is one sub-experiment, so the design is row-wise rather than a grid:
 `define_experiment()` runs exactly those points, and `as.list()` on one row
-gives the named list it expects. Values are rounded to the model's integer grid
-and settings in `fixed` are appended to every row.
+gives the named list it expects. Numeric values are rounded to the model's
+integer grid, settings in `fixed` are appended to every row, and each level in
+`levels` is allocated once per block of rows — make `n` a multiple of the level
+count for exact balance. A level that must be crossed with the whole design
+belongs in `constants` instead, where it multiplies the run count.
 
 ### Import an existing BehaviorSpace CSV
 

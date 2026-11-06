@@ -82,6 +82,31 @@ validate_ranges <- function(ranges, arg = "ranges") {
   invisible(ranges)
 }
 
+validate_levels <- function(levels, arg = "levels") {
+  validate_named_list(levels, arg)
+  for (name in names(levels)) {
+    values <- levels[[name]]
+    if (!is.atomic(values) || length(values) == 0L) {
+      stop("`", arg, "$", name, "` must be an atomic vector of levels.",
+           call. = FALSE)
+    }
+    values <- as.character(values)
+    if (anyNA(values) || any(!nzchar(values))) {
+      stop("`", arg, "$", name, "` must not contain missing or empty levels.",
+           call. = FALSE)
+    }
+    if (anyDuplicated(values)) {
+      stop("`", arg, "$", name, "` must list each level once; weights are not supported.",
+           call. = FALSE)
+    }
+    if (length(values) < 2L) {
+      stop("`", arg, "$", name, "` must have at least two levels; ",
+           "use `fixed` for a setting with one value.", call. = FALSE)
+    }
+  }
+  invisible(levels)
+}
+
 validate_metadata <- function(metadata) {
   validate_named_list(metadata, "metadata", allow_null = TRUE)
   if (!is.null(metadata)) {

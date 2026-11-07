@@ -27,8 +27,9 @@
 #'   Make `n` a multiple of the number of levels for exact balance. Levels are
 #'   allocated independently of the numeric strata: every level sees a
 #'   representative share of the numeric space, not all of it. To cross a level
-#'   with the whole numeric design instead, leave it out of `levels` and pass it
-#'   in `constants` to [define_experiment()], which multiplies the run count.
+#'   with the whole numeric design instead, leave it out of `levels` and use an
+#'   explicitly crossed `sub_experiments` design; `constants` holds one value
+#'   fixed across all sub-experiments and does not create levels.
 #' @param seed Optional single number; when supplied, the draw is reproducible.
 #' @param dup Number of candidate points `maximinLHS()` weighs per design
 #'   point; larger values spread the design further apart at some cost in

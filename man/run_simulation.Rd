@@ -21,6 +21,9 @@ run_simulation(
   timeout = Inf,
   metadata = NULL,
   smoke = FALSE,
+  output = "table",
+  tidy_output = TRUE,
+  db_con = NULL,
   quiet_fail = FALSE,
   ...
 )
@@ -66,6 +69,14 @@ than only at the end.}
 
 \item{smoke}{Logical; if \code{TRUE}, forces 1 repetition and 5 ticks for a
 quick validation run without editing the experiment object.}
+
+\item{output}{Additional logolink output types, appended to \code{"table"}
+(e.g. \code{"lists"} for NetLogo list metrics).}
+
+\item{tidy_output}{Passed to \code{\link[logolink:run_experiment]{logolink::run_experiment()}}.}
+
+\item{db_con}{Optional: an existing connection from \code{\link[=db_open]{db_open()}}. If given,
+\code{db_path} is ignored and the connection is left open on exit.}
 
 \item{quiet_fail}{Logical; if \code{TRUE}, convert a failed NetLogo run into a
 warning and return zero rows. Defaults to \code{FALSE}, so execution failures

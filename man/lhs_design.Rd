@@ -22,8 +22,9 @@ level is allocated once per block of rows, so counts differ by at most one.
 Make \code{n} a multiple of the number of levels for exact balance. Levels are
 allocated independently of the numeric strata: every level sees a
 representative share of the numeric space, not all of it. To cross a level
-with the whole numeric design instead, leave it out of \code{levels} and pass it
-in \code{constants} to \code{\link[=define_experiment]{define_experiment()}}, which multiplies the run count.}
+with the whole numeric design instead, leave it out of \code{levels} and use an
+explicitly crossed \code{sub_experiments} design; \code{constants} holds one value
+fixed across all sub-experiments and does not create levels.}
 
 \item{seed}{Optional single number; when supplied, the draw is reproducible.}
 

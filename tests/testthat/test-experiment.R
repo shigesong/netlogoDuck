@@ -129,9 +129,11 @@ test_that("smoke mode forces one repetition and five ticks", {
       spec = list(
         metrics = "ticks",
         constants = list(),
-        sub_experiments = NULL,
-        repetitions = 99L,
-        time_limit = 500L
+         sub_experiments = NULL,
+         repetitions = 99L,
+         time_limit = 500L,
+         setup = "custom-setup",
+         go = "custom-go"
       )
     ),
     class = "netlogo_experiment"
@@ -146,8 +148,10 @@ test_that("smoke mode forces one repetition and five ticks", {
 
       expect_equal(n, 1L)
       expect_equal(create_args[[1L]]$repetitions, 1L)
-      expect_equal(create_args[[1L]]$time_limit, 5L)
-      expect_false(create_args[[1L]]$run_metrics_every_step)
+       expect_equal(create_args[[1L]]$time_limit, 5L)
+       expect_false(create_args[[1L]]$run_metrics_every_step)
+       expect_equal(create_args[[1L]]$setup, "custom-setup")
+       expect_equal(create_args[[1L]]$go, "custom-go")
       expect_equal(run_args[[1L]]$setup_file, "smoke.xml")
       expect_equal(xp$spec$repetitions, 99L)
       expect_equal(xp$spec$time_limit, 500L)

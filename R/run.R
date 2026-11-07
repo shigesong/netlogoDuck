@@ -84,11 +84,13 @@ run_experiment_to_duckdb <- function(experiment,
       model               = experiment$model,
       metrics             = experiment$spec$metrics,
       constants           = experiment$spec$constants,
-      sub_experiments     = experiment$spec$sub_experiments,
-      repetitions         = 1L,
-      time_limit          = 5L,
-      run_metrics_every_step = FALSE
-    )
+       sub_experiments     = experiment$spec$sub_experiments,
+       repetitions         = 1L,
+       time_limit          = 5L,
+       run_metrics_every_step = FALSE,
+       setup               = experiment$spec$setup,
+       go                  = experiment$spec$go
+     )
   }
 
   other_args <- c(paste("--threads", threads))
@@ -189,11 +191,14 @@ run_simulation <- function(name,
                            go = "go",
                            table = "results",
                            threads = 4L,
-                            timeout = Inf,
-                            metadata = NULL,
-                            smoke = FALSE,
-                            quiet_fail = FALSE,
-                            ...) {
+                           timeout = Inf,
+                           metadata = NULL,
+                           smoke = FALSE,
+                           output = "table",
+                           tidy_output = TRUE,
+                           db_con = NULL,
+                           quiet_fail = FALSE,
+                           ...) {
   xp <- define_experiment(
     name = name,
     model = model,
@@ -215,6 +220,9 @@ run_simulation <- function(name,
     timeout = timeout,
     metadata = metadata,
     smoke = smoke,
+    output = output,
+    tidy_output = tidy_output,
+    db_con = db_con,
     quiet_fail = quiet_fail
   )
 }

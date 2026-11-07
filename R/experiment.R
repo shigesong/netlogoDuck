@@ -23,7 +23,7 @@
 #'
 #' @return An object of class `netlogo_experiment`: a list with elements
 #'   `name`, `model`, `setup_file` (path to the generated XML), and `spec`
-#'   (the full `create_experiment()` call for record keeping).
+#'   (the main experiment settings used to create the XML).
 #' @export
 #'
 #' @examples
@@ -94,10 +94,12 @@ define_experiment <- function(name,
       spec       = list(
         metrics        = metrics,
         constants      = constants,
-        sub_experiments = sub_experiments,
-        repetitions    = repetitions,
-        time_limit     = time_limit
-      )
+         sub_experiments = sub_experiments,
+         repetitions    = repetitions,
+         time_limit     = time_limit,
+         setup          = setup,
+         go             = go
+       )
     ),
     class = "netlogo_experiment"
   )

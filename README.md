@@ -39,7 +39,7 @@ existing CSV files or querying an existing DuckDB database.
 From GitHub, install the package and its GitHub-only dependency with:
 
 ```r
-install.packages(c("DBI", "duckdb", "duckplyr", "dplyr", "remotes"))
+install.packages(c("DBI", "duckdb", "duckplyr", "dplyr", "lhs", "tibble", "remotes"))
 remotes::install_github("danielvartan/logolink")
 remotes::install_github("shigesong/netlogoDuck")
 ```
@@ -127,8 +127,9 @@ Each row is one sub-experiment, so the design is row-wise rather than a grid:
 the model's integer grid, settings in `fixed` are appended to every row, and
 each level in `levels` is allocated once per block of rows — make `n` a
 multiple of the level count for exact balance. A level that must be crossed
-with the whole design belongs in `constants` instead, where it multiplies the
-run count.
+with the whole design requires an explicitly crossed `sub_experiments` data
+frame; `constants` holds one value fixed across all sub-experiments and does
+not multiply the run count.
 
 `as_sub_experiments()` performs the conversion, keeping column names exact
 (including non-syntactic ones such as `%-similar-wanted`) and turning factors

@@ -49,7 +49,7 @@ than only at the end.}
 \value{
 An object of class \code{netlogo_experiment}: a list with elements
 \code{name}, \code{model}, \code{setup_file} (path to the generated XML), and \code{spec}
-(the full \code{create_experiment()} call for record keeping).
+(the main experiment settings used to create the XML).
 }
 \description{
 Thin wrapper around \code{\link[logolink:create_experiment]{logolink::create_experiment()}} that also records the

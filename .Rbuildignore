@@ -23,4 +23,5 @@
 ^src$
 ^install\.R$
 ^AGENTS\.md$
+^next_step\.md$
 ^LICENSE$

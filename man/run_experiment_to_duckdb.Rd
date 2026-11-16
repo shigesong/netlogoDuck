@@ -15,7 +15,10 @@ run_experiment_to_duckdb(
   output = "table",
   tidy_output = TRUE,
   db_con = NULL,
-  quiet_fail = FALSE
+  quiet_fail = FALSE,
+  experiment_name = NULL,
+  other_arguments = NULL,
+  output_dir = tempdir()
 )
 }
 \arguments{
@@ -26,7 +29,8 @@ run_experiment_to_duckdb(
 \item{table}{Name of the results table in the database.}
 
 \item{threads}{Number of threads passed to the NetLogo headless runner
-(via \code{other_arguments = "--threads N"}).}
+(via \code{other_arguments = "--threads N"}). Set to \code{NULL} to omit the flag and
+control threading through \code{other_arguments} instead.}
 
 \item{timeout}{Maximum time in seconds to wait for NetLogo (see
 \code{\link[logolink:run_experiment]{logolink::run_experiment()}}).}
@@ -48,6 +52,19 @@ quick validation run without editing the experiment object.}
 \item{quiet_fail}{Logical; if \code{TRUE}, convert a failed NetLogo run into a
 warning and return zero rows. Defaults to \code{FALSE}, so execution failures
 are errors and cannot be mistaken for successful empty results.}
+
+\item{experiment_name}{Optional name of an experiment stored in the NetLogo
+model file. When supplied, \code{\link[logolink:run_experiment]{logolink::run_experiment()}} runs that experiment
+instead of the generated setup file, so \code{smoke} cannot be combined with it.
+The \code{repetitions} and \code{time_limit} columns are then \code{NA}, because the
+model-file experiment defines its own run length.}
+
+\item{other_arguments}{Optional character vector of extra command-line
+arguments for the NetLogo executable (see \code{\link[logolink:run_experiment]{logolink::run_experiment()}}).
+\code{"--threads N"} is prepended when \code{threads} is not \code{NULL}.}
+
+\item{output_dir}{Directory where NetLogo writes its output files. Passed to
+\code{\link[logolink:run_experiment]{logolink::run_experiment()}} and must already exist.}
 }
 \value{
 Invisibly, the number of rows appended to the database.

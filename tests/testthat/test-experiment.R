@@ -94,6 +94,82 @@ test_that("run_experiment_to_duckdb validates execution arguments", {
     netlogoDuck::run_experiment_to_duckdb(xp, db, quiet_fail = NA),
     "quiet_fail"
   )
+  expect_error(
+    netlogoDuck::run_experiment_to_duckdb(xp, db, experiment_name = ""),
+    "experiment_name"
+  )
+  expect_error(
+    netlogoDuck::run_experiment_to_duckdb(xp, db, other_arguments = 1L),
+    "other_arguments"
+  )
+  expect_error(
+    netlogoDuck::run_experiment_to_duckdb(xp, db, output_dir = tempfile("missing")),
+    "output_dir"
+  )
+  expect_error(
+    netlogoDuck::run_experiment_to_duckdb(xp, db, experiment_name = "x",
+                                          smoke = TRUE),
+    "smoke"
+  )
+})
+
+test_that("run_experiment_to_duckdb forwards logolink execution options", {
+  xp <- structure(
+    list(
+      name = "demo",
+      model = "demo.nlogox",
+      setup_file = "demo.xml",
+      spec = list(repetitions = 2L, time_limit = 10L)
+    ),
+    class = "netlogo_experiment"
+  )
+  db <- tempfile(fileext = ".duckdb")
+  run_args <- list()
+
+  testthat::with_mocked_bindings(
+    {
+      run_experiment_to_duckdb(
+        xp, db,
+        threads = NULL,
+        other_arguments = "--update-plots",
+        output_dir = tempdir(),
+        experiment_name = "Model analysis"
+      )
+      run_experiment_to_duckdb(
+        xp, db,
+        threads = 8L,
+        other_arguments = c("--update-plots", "--min-pxcor -16")
+      )
+
+      expect_null(run_args[[1L]]$setup_file)
+      expect_equal(run_args[[1L]]$experiment, "Model analysis")
+      expect_equal(run_args[[1L]]$other_arguments, "--update-plots")
+      expect_equal(run_args[[1L]]$output_dir, tempdir())
+
+      expect_equal(run_args[[2L]]$setup_file, "demo.xml")
+      expect_null(run_args[[2L]]$experiment)
+      expect_equal(run_args[[2L]]$other_arguments,
+                   c("--threads 8", "--update-plots", "--min-pxcor -16"))
+    },
+    run_experiment = function(...) {
+      run_args <<- c(run_args, list(list(...)))
+      list(table = data.frame(ticks = 1L))
+    },
+    .package = "logolink"
+  )
+
+  con <- netlogoDuck::db_open(db)
+  on.exit(netlogoDuck::db_close(con))
+  stored <- DBI::dbGetQuery(con, "SELECT * FROM results ORDER BY run_id")
+  expect_equal(nrow(stored), 2L)
+  expect_true(is.na(stored$repetitions[1]))
+  expect_equal(stored$repetitions[2], 2L)
+  expect_true(is.na(stored$time_limit[1]))
+  expect_equal(stored$time_limit[2], 10L)
+  expect_true(is.na(stored$threads[1]))
+  expect_equal(stored$threads[2], 8L)
+  expect_equal(stored$experiment_name[1], "Model analysis")
+  expect_true(is.na(stored$experiment_name[2]))
 })
 
 test_that("NetLogo execution failures are errors by default", {

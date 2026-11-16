@@ -9,7 +9,8 @@
 #' @param db_path Path to the `.duckdb` database file. Created if missing.
 #' @param table Name of the results table in the database.
 #' @param threads Number of threads passed to the NetLogo headless runner
-#'   (via `other_arguments = "--threads N"`).
+#'   (via `other_arguments = "--threads N"`). Set to `NULL` to omit the flag and
+#'   control threading through `other_arguments` instead.
 #' @param timeout Maximum time in seconds to wait for NetLogo (see
 #'   [logolink::run_experiment()]).
 #' @param metadata Optional named list of extra values stamped on every row
@@ -24,6 +25,16 @@
 #' @param quiet_fail Logical; if `TRUE`, convert a failed NetLogo run into a
 #'   warning and return zero rows. Defaults to `FALSE`, so execution failures
 #'   are errors and cannot be mistaken for successful empty results.
+#' @param experiment_name Optional name of an experiment stored in the NetLogo
+#'   model file. When supplied, [logolink::run_experiment()] runs that experiment
+#'   instead of the generated setup file, so `smoke` cannot be combined with it.
+#'   The `repetitions` and `time_limit` columns are then `NA`, because the
+#'   model-file experiment defines its own run length.
+#' @param other_arguments Optional character vector of extra command-line
+#'   arguments for the NetLogo executable (see [logolink::run_experiment()]).
+#'   `"--threads N"` is prepended when `threads` is not `NULL`.
+#' @param output_dir Directory where NetLogo writes its output files. Passed to
+#'   [logolink::run_experiment()] and must already exist.
 #'
 #' @return Invisibly, the number of rows appended to the database.
 #' @export
@@ -46,15 +57,18 @@ run_experiment_to_duckdb <- function(experiment,
                                      output = "table",
                                      tidy_output = TRUE,
                                      db_con = NULL,
-                                     quiet_fail = FALSE) {
+                                     quiet_fail = FALSE,
+                                     experiment_name = NULL,
+                                     other_arguments = NULL,
+                                     output_dir = tempdir()) {
   if (!inherits(experiment, "netlogo_experiment")) {
     stop("`experiment` must be a netlogo_experiment from define_experiment().",
          call. = FALSE)
   }
   if (is.null(db_con)) validate_path(db_path, "db_path", allow_memory = TRUE)
   validate_table(table)
-  if (!is_positive_integerish(threads)) {
-    stop("`threads` must be one positive integer.", call. = FALSE)
+  if (!is.null(threads) && !is_positive_integerish(threads)) {
+    stop("`threads` must be NULL or one positive integer.", call. = FALSE)
   }
   if (!((is.numeric(timeout) && length(timeout) == 1L && !is.na(timeout) &&
          (is.infinite(timeout) && timeout > 0 || is.finite(timeout) && timeout >= 0)))) {
@@ -75,6 +89,23 @@ run_experiment_to_duckdb <- function(experiment,
   if (!is_scalar_logical(quiet_fail)) {
     stop("`quiet_fail` must be one non-missing logical value.", call. = FALSE)
   }
+  if (!is.null(experiment_name)) {
+    validate_string(experiment_name, "experiment_name")
+  }
+  if (!is.null(other_arguments) &&
+      (!is.character(other_arguments) || anyNA(other_arguments) ||
+       any(!nzchar(other_arguments)))) {
+    stop("`other_arguments` must be NULL or a character vector of ",
+         "non-empty arguments.", call. = FALSE)
+  }
+  validate_string(output_dir, "output_dir")
+  if (!dir.exists(output_dir)) {
+    stop("`output_dir` does not exist: ", output_dir, call. = FALSE)
+  }
+  if (smoke && !is.null(experiment_name)) {
+    stop("`smoke` cannot be combined with `experiment_name`: the model-file ",
+         "experiment defines its own repetitions and time limit.", call. = FALSE)
+  }
   if (!is.null(db_con)) validate_db_con(db_con)
 
   # Smoke mode: 1 rep x 5 ticks, without mutating the caller's object.
@@ -93,18 +124,31 @@ run_experiment_to_duckdb <- function(experiment,
      )
   }
 
-  other_args <- c(paste("--threads", threads))
+  other_args <- if (is.null(threads)) {
+    character()
+  } else {
+    paste("--threads", threads)
+  }
+  other_args <- c(other_args, other_arguments)
+  if (length(other_args) == 0L) other_args <- NULL
 
-  message("[", experiment$name, "] running ", experiment$spec$repetitions,
-          " reps x ", experiment$spec$time_limit, " ticks ...")
+  if (is.null(experiment_name)) {
+    message("[", experiment$name, "] running ", experiment$spec$repetitions,
+            " reps x ", experiment$spec$time_limit, " ticks ...")
+  } else {
+    message("[", experiment$name, "] running model-file experiment '",
+            experiment_name, "' ...")
+  }
   res <- tryCatch(
     logolink::run_experiment(
       model_path      = experiment$model,
-      setup_file      = experiment$setup_file,
+      setup_file      = if (is.null(experiment_name)) experiment$setup_file,
+      experiment      = experiment_name,
       output          = output,
       other_arguments = other_args,
       timeout         = timeout,
-      tidy_output     = tidy_output
+      tidy_output     = tidy_output,
+      output_dir      = output_dir
     ),
     error = function(e) {
       message <- paste0("[", experiment$name, "] NetLogo experiment failed: ",
@@ -124,17 +168,27 @@ run_experiment_to_duckdb <- function(experiment,
 
   tab <- as.data.frame(res$table)
 
-  # Stamp run metadata as flat columns.
+  # Stamp run metadata as flat columns. A model-file experiment defines its own
+  # repetitions and time limit, which the object's spec cannot describe.
   run_id  <- new_run_id(experiment$name)
   meta <- list(
     run_id      = run_id,
     experiment  = experiment$name,
     model_path  = experiment$model,
     timestamp   = as.character(Sys.time()),
-    repetitions = experiment$spec$repetitions,
-    time_limit  = experiment$spec$time_limit,
-    threads     = threads
+    repetitions = if (is.null(experiment_name)) {
+      experiment$spec$repetitions
+    } else {
+      NA_integer_
+    },
+    time_limit  = if (is.null(experiment_name)) {
+      experiment$spec$time_limit
+    } else {
+      NA_integer_
+    },
+    threads     = if (is.null(threads)) NA_integer_ else threads
   )
+  if (!is.null(experiment_name)) meta$experiment_name <- experiment_name
   if (!is.null(metadata)) meta <- c(meta, metadata)
   tab <- bind_metadata(tab, meta)
 
@@ -198,6 +252,9 @@ run_simulation <- function(name,
                            tidy_output = TRUE,
                            db_con = NULL,
                            quiet_fail = FALSE,
+                           experiment_name = NULL,
+                           other_arguments = NULL,
+                           output_dir = tempdir(),
                            ...) {
   xp <- define_experiment(
     name = name,
@@ -223,7 +280,10 @@ run_simulation <- function(name,
     output = output,
     tidy_output = tidy_output,
     db_con = db_con,
-    quiet_fail = quiet_fail
+    quiet_fail = quiet_fail,
+    experiment_name = experiment_name,
+    other_arguments = other_arguments,
+    output_dir = output_dir
   )
 }
 

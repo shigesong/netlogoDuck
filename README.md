@@ -102,6 +102,15 @@ run_simulation(
 experiment object supplied by the caller. It is intended for a quick runtime
 check, not for production results.
 
+Execution options are forwarded to `logolink::run_experiment()`:
+`other_arguments` adds NetLogo command-line flags, `output_dir` sets where
+NetLogo writes its output files, and `experiment_name` runs an experiment
+defined in the model file instead of the generated setup file. `threads = NULL`
+omits the default `--threads N` flag so threading can be set through
+`other_arguments`. When `experiment_name` is used, the `repetitions` and
+`time_limit` columns are `NA` because the model-file experiment defines its own
+run length.
+
 ### Design a Latin hypercube
 
 `lhs_design()` draws a maximin Latin hypercube on the model's own ranges and

@@ -8,9 +8,11 @@ db_open(db_path, read_only = FALSE)
 }
 \arguments{
 \item{db_path}{Path to a \code{.duckdb} database file. If the file does not
-exist yet it is created. Pass \code{":memory:"} for an in-memory database.}
+exist yet it is created, along with any missing parent directories.
+Pass \code{":memory:"} for an in-memory database.}
 
-\item{read_only}{Logical; open the database in read-only mode.}
+\item{read_only}{Logical; open the database in read-only mode. Missing
+parent directories are not created, since the file must already exist.}
 }
 \value{
 A \code{duckdb_connection} object.

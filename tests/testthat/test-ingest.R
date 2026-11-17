@@ -55,6 +55,21 @@ test_that("db_open / db_close round-trip a file", {
   expect_true(file.exists(out))
 })
 
+test_that("db_open creates missing parent directories", {
+  root <- tempfile("nested")
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+
+  out <- file.path(root, "a", "b", "res.duckdb")
+  con <- netlogoDuck::db_open(out)
+  netlogoDuck::db_close(con)
+  expect_true(file.exists(out))
+
+  # read_only must not create a tree it could never open.
+  missing <- file.path(root, "c", "res.duckdb")
+  expect_error(netlogoDuck::db_open(missing, read_only = TRUE))
+  expect_false(dir.exists(file.path(root, "c")))
+})
+
 test_that("public connection and query arguments are validated", {
   expect_error(netlogoDuck::db_open(character()), "db_path")
   expect_error(netlogoDuck::db_open(tempfile(), read_only = NA), "read_only")

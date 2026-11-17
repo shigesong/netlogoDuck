@@ -1,4 +1,4 @@
-test_that("lhs_design returns one rounded row per design point", {
+test_that("lhs_design returns one continuous row per design point", {
   ranges <- list(
     "wolf-reproduce"      = c(1, 20),
     "grass-regrowth-time" = c(5, 100)
@@ -10,13 +10,24 @@ test_that("lhs_design returns one rounded row per design point", {
   expect_equal(names(design), names(ranges))
   expect_true(all(vapply(design, is.numeric, logical(1))))
 
-  # Every value must sit inside its range and on the integer grid.
+  # Every value must sit inside its continuous range.
   for (factor in names(ranges)) {
     range <- ranges[[factor]]
     expect_true(all(design[[factor]] >= range[1]))
     expect_true(all(design[[factor]] <= range[2]))
-    expect_equal(design[[factor]], round(design[[factor]]))
   }
+})
+
+test_that("lhs_design preserves fractional values in narrow ranges", {
+  design <- netlogoDuck::lhs_design(
+    n = 12,
+    ranges = list(probability = c(0, 1), score = c(0, 2)),
+    seed = 2026
+  )
+
+  expect_true(any(design[["probability"]] > 0 & design[["probability"]] < 1))
+  expect_true(any(design[["score"]] > 0 & design[["score"]] < 2))
+  expect_true(any(design[["score"]] %% 1 != 0))
 })
 
 test_that("lhs_design appends fixed settings to every row", {

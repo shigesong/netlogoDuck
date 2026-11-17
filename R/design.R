@@ -1,8 +1,8 @@
 #' Build a Latin hypercube design on the model's own ranges
 #'
 #' Draws a maximin Latin hypercube with [lhs::maximinLHS()], maps each column
-#' onto the range of the factor it belongs to, rounds to the model's integer
-#' grid, allocates categorical factors in balanced blocks, and appends settings
+#' onto the continuous range of the factor it belongs to, allocates categorical
+#' factors in balanced blocks, and appends settings
 #' that do not vary. The result is one row per design point, so it is a row-wise
 #' design and not a grid: no two rows are crossed.
 #'
@@ -17,7 +17,10 @@
 #'
 #' @param n Number of design points.
 #' @param ranges Named list of length-2 numeric vectors, one per factor, giving
-#'   `c(low, high)` in the model's own units. Column order follows list order.
+#'   the continuous interval `c(low, high)` in the model's own units. Column
+#'   order follows list order. Values are not rounded; use `levels` for
+#'   categorical parameters and round a returned column yourself when a model
+#'   parameter must be integral.
 #' @param fixed Named list of settings held constant across every design point
 #'   (e.g. `list("model-version" = "sheep-wolves-grass")`). Appended as
 #'   columns to the returned design.
@@ -36,7 +39,7 @@
 #'   running time.
 #'
 #' @return A [tibble][tibble::tibble-package] with `n` rows: one column per
-#'   element of `ranges` (rounded to integers), then one column per element of
+#'   element of `ranges` (continuous numeric values), then one column per element of
 #'   `levels`, then one column per element of `fixed`.
 #' @export
 #'
@@ -93,7 +96,7 @@ lhs_design <- function(n,
   high <- vapply(ranges, function(range) range[[2]], numeric(1))
   scaled <- unit * rep(high - low, each = n) + rep(low, each = n)
 
-  design <- tibble::as_tibble(round(scaled), .name_repair = "minimal")
+  design <- tibble::as_tibble(scaled, .name_repair = "minimal")
   names(design) <- names(ranges)
 
   # Categorical factors are not sampled on a continuum: each block of rows gets

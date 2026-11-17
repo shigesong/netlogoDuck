@@ -10,7 +10,10 @@ lhs_design(n, ranges, fixed = list(), levels = list(), seed = NULL, dup = 5L)
 \item{n}{Number of design points.}
 
 \item{ranges}{Named list of length-2 numeric vectors, one per factor, giving
-\code{c(low, high)} in the model's own units. Column order follows list order.}
+the continuous interval \code{c(low, high)} in the model's own units. Column
+order follows list order. Values are not rounded; use \code{levels} for
+categorical parameters and round a returned column yourself when a model
+parameter must be integral.}
 
 \item{fixed}{Named list of settings held constant across every design point
 (e.g. \code{list("model-version" = "sheep-wolves-grass")}). Appended as
@@ -34,13 +37,13 @@ running time.}
 }
 \value{
 A \link[tibble:tibble-package]{tibble} with \code{n} rows: one column per
-element of \code{ranges} (rounded to integers), then one column per element of
+element of \code{ranges} (continuous numeric values), then one column per element of
 \code{levels}, then one column per element of \code{fixed}.
 }
 \description{
 Draws a maximin Latin hypercube with \code{\link[lhs:maximinLHS]{lhs::maximinLHS()}}, maps each column
-onto the range of the factor it belongs to, rounds to the model's integer
-grid, allocates categorical factors in balanced blocks, and appends settings
+onto the continuous range of the factor it belongs to, allocates categorical
+factors in balanced blocks, and appends settings
 that do not vary. The result is one row per design point, so it is a row-wise
 design and not a grid: no two rows are crossed.
 }
